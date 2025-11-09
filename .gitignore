@@ -212,3 +212,5 @@ __marimo__/
 
 # Ignore entire data folder (and its contents)
 data/
+
+.DS_store
