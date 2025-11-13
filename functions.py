@@ -2,7 +2,7 @@ import pandas as pd
 from cobra.flux_analysis import single_reaction_deletion
 import pandas as pd
 import re
-
+import numpy as np
 
 def rxn_essential(model):
     df_res_rxn = single_reaction_deletion(model, processes=10)
@@ -157,5 +157,4 @@ def calculate_new_bounds(rxn, rule_type, cell_line, CCLE_name_map, CCLE_expressi
     if lb > ub:
         lb, ub = (0.0, 0.0)
 
-    # --- Assign both bounds at once (avoids ValueError) ---
-    rxn.bounds = (lb, ub)
+    return (lb, ub)
