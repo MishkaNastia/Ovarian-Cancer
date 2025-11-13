@@ -93,9 +93,9 @@ def open_bounds(rxn):
     Set reaction bounds fully open depending on reversibility.
     """
     if rxn.reversibility:
-        rxn.bounds = (-1000, 1000)
+        return (-1000, 1000)
     else:
-        rxn.bounds = (0, 1000)
+        return (0, 1000)
 
 def clean_bounds(rxn, tol=1e-6):
     lb, ub = rxn.lower_bound, rxn.upper_bound
@@ -110,7 +110,7 @@ def clean_bounds(rxn, tol=1e-6):
     if lb > ub:
         lb, ub = 0.0, 0.0
 
-    rxn.bounds = (lb, ub)
+    return (lb, ub)
 
 def classify_rule(rxn):
     rule = rxn.gene_reaction_rule.lower()
