@@ -58,7 +58,7 @@ def is_essential_reaction(df, rxn):
     return rxn in df['rxn_ids'].values
 
 #DO WE HAVE TRANSCIPTOMICS FOR THE REACTION GENES
-def has_transcriptomics(reaction, CCLE_genes):
+def has_transcriptomics(reaction, CCLE_expression):
     """
     Checks whether transcriptomics data are available for the gene(s)
     associated with a given reaction.
@@ -82,7 +82,7 @@ def has_transcriptomics(reaction, CCLE_genes):
     
     # Check if any gene in the reaction exists in the expression dataframe
     for g in reaction_genes:
-        if g in CCLE_genes:
+        if g in CCLE_expression.columns:
             return True  # we have transcriptomics for at least one gene
     
     # If none of the genes matched
@@ -97,20 +97,6 @@ def open_bounds(rxn):
     else:
         return (0, 1000)
 
-def clean_bounds(rxn, tol=1e-6):
-    lb, ub = rxn.lower_bound, rxn.upper_bound
-
-    # Round tiny bounds to zero
-    if abs(lb) < tol:
-        lb = 0.0
-    if abs(ub) < tol:
-        ub = 0.0
-
-    # If still inverted, collapse to zero flux
-    if lb > ub:
-        lb, ub = 0.0, 0.0
-
-    return (lb, ub)
 
 def classify_rule(rxn):
     rule = rxn.gene_reaction_rule.lower()
@@ -123,12 +109,12 @@ def classify_rule(rxn):
     else:
         return None
     
-def calculate_new_bounds(rxn, rule_type, cell_line, CCLE_name_map, CCLE_expression, tol=1e-6):
-    matched_cols = [CCLE_name_map[g.name] for g in rxn.genes if g.name in CCLE_name_map]
-    if not matched_cols:
-        return
-
-    expr_values = CCLE_expression.loc[cell_line, matched_cols].astype(float).tolist()
+def calculate_new_bounds(rxn, rule_type, cell_line, CCLE_expression, floor = 1e-3):
+    reaction_genes = [gene.name.upper() for gene in rxn.genes if gene.name.upper() in CCLE_expression.columns]
+    print(reaction_genes)
+    expr_values = CCLE_expression.loc[cell_line, reaction_genes].astype(float).tolist()
+    if len(expr_values) == 0:
+        return None
 
     if rule_type == "one_gene":
         E = expr_values[0]
@@ -138,10 +124,9 @@ def calculate_new_bounds(rxn, rule_type, cell_line, CCLE_name_map, CCLE_expressi
         E = min(expr_values)
     else:
         return
-
-    # Ensure E is valid and non-negative
-    if not pd.notnull(E) or E < 0:
-        return
+    
+    if E < floor:
+        E = floor
 
     # Determine new bounds
     if rxn.reversibility:
@@ -150,11 +135,5 @@ def calculate_new_bounds(rxn, rule_type, cell_line, CCLE_name_map, CCLE_expressi
     else:
         lb = 0.0
         ub = E
-
-    # --- Critical part: clean tiny noise BEFORE assigning ---
-    if abs(lb) < tol: lb = 0.0
-    if abs(ub) < tol: ub = 0.0
-    if lb > ub:
-        lb, ub = (0.0, 0.0)
 
     return (lb, ub)
