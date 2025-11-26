@@ -102,7 +102,7 @@ def classify_rule(rxn):
     rule = rxn.gene_reaction_rule.lower()
     if "and" in rule and "or" not in rule:
         return "and_rule"
-    elif "or" in rule and "and" not in rule:
+    elif "or" in rule :
         return "or_rule"
     elif "and" not in rule and "or" not in rule and rule != "":
         return "one_gene"
@@ -111,7 +111,6 @@ def classify_rule(rxn):
     
 def calculate_new_bounds(rxn, rule_type, cell_line, CCLE_expression, floor = 1e-3):
     reaction_genes = [gene.name.upper() for gene in rxn.genes if gene.name.upper() in CCLE_expression.columns]
-    print(reaction_genes)
     expr_values = CCLE_expression.loc[cell_line, reaction_genes].astype(float).tolist()
     if len(expr_values) == 0:
         return None
